@@ -259,7 +259,12 @@ const knowledge = {
         promptEl.textContent = "点哪里，学哪里";
         hintEl.textContent = "不答题、不计分。直接点击地图上的省份，右侧会固定显示它的介绍。";
       }
+      if (isMobileLayout()) showInfo(target.feature.properties.name, false);
       updateStats();
+    }
+
+    function isMobileLayout() {
+      return window.matchMedia("(max-width: 768px)").matches;
     }
 
     function chooseProvince(name) {

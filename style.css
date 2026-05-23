@@ -455,14 +455,14 @@
       }
 
       .map-wrap {
-        min-height: 430px;
-        height: calc(100dvh - var(--mobile-question) - 92px);
-        max-height: 68dvh;
+        min-height: 360px;
+        height: clamp(360px, 56dvh, 520px);
+        max-height: 58dvh;
         padding: 3px;
       }
 
       #map {
-        min-height: 430px;
+        min-height: 360px;
         height: 100%;
         border-radius: 8px;
       }
@@ -507,14 +507,11 @@
       }
 
       .challenge {
-        position: fixed;
-        left: 8px;
-        right: 8px;
-        bottom: calc(10px + env(safe-area-inset-bottom));
-        z-index: 20;
-        padding: 8px 12px 9px;
+        position: static;
+        margin: 8px 0 0;
+        padding: 8px 12px;
         border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(22, 35, 45, .16);
+        box-shadow: 0 4px 14px rgba(22, 35, 45, .1);
       }
 
       .prompt-label {
@@ -536,20 +533,16 @@
       }
 
       .feedback {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        bottom: calc(var(--mobile-question) + env(safe-area-inset-bottom) + 22px);
-        z-index: 22;
+        position: static;
         min-height: 0;
-        padding: 8px 11px;
+        margin-top: 6px;
+        padding: 7px 10px;
         border: 1px solid rgba(183, 101, 25, .28);
         border-radius: 10px;
         background: rgba(255, 250, 235, .96);
-        box-shadow: 0 8px 22px rgba(22, 35, 45, .16);
+        box-shadow: none;
         font-size: 14px;
         line-height: 1.35;
-        pointer-events: none;
       }
 
       .feedback:empty {
@@ -594,16 +587,15 @@
         font-weight: 500;
       }
 
-      body:not([data-mode="study"]) .card,
       body:not([data-mode="study"]) .mistakes,
       body:not([data-mode="study"]) .footer-note {
         display: none;
       }
 
-      body[data-answered="true"]:not([data-mode="study"]) .card {
+      body:not([data-mode="study"]) .card {
         display: block;
         margin-top: 8px;
-        margin-bottom: calc(var(--mobile-question) + env(safe-area-inset-bottom) + 22px);
+        margin-bottom: calc(14px + env(safe-area-inset-bottom));
       }
 
       body[data-mode="study"] {
@@ -623,6 +615,12 @@
 
       .card h2 {
         font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .meta {
+        margin-bottom: 8px;
+        font-size: 14px;
       }
 
       .fact {
@@ -660,10 +658,10 @@
       }
 
       .map-wrap {
-        min-height: 400px;
+        min-height: 340px;
       }
 
       #map {
-        min-height: 400px;
+        min-height: 340px;
       }
     }
