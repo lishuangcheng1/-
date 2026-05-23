@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>中国地图学习小游戏</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <section class="map-area" aria-label="中国地图学习区">
+      <div class="topbar">
+        <h1>中国地图闯关</h1>
+        <div class="stats" aria-live="polite">
+          <span class="pill">得分 <strong id="score">0</strong></span>
+          <span class="pill">连对 <strong id="streak">0</strong></span>
+          <span class="pill">题目 <strong id="round">1</strong>/<strong id="total">34</strong></span>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="segmented" role="tablist" aria-label="学习模式">
+          <button class="active" data-mode="locate" type="button">找位置</button>
+          <button data-mode="capital" type="button">猜省会</button>
+          <button data-mode="feature" type="button">猜特色</button>
+          <button data-mode="study" type="button">自由学</button>
+        </div>
+        <select id="regionFilter" aria-label="地区筛选">
+          <option value="all">全部地区</option>
+          <option value="东北">东北</option>
+          <option value="华北">华北</option>
+          <option value="华东">华东</option>
+          <option value="华中">华中</option>
+          <option value="华南">华南</option>
+          <option value="西南">西南</option>
+          <option value="西北">西北</option>
+        </select>
+      </div>
+      <div class="map-wrap">
+        <div class="zoom-controls" aria-label="地图缩放控制">
+          <button id="zoomInBtn" type="button" title="放大">+</button>
+          <button id="zoomOutBtn" type="button" title="缩小">-</button>
+          <button id="resetMapBtn" type="button" title="复位">⌂</button>
+        </div>
+        <svg id="map" viewBox="0 0 1000 760" role="img" aria-label="中国省级行政区地图"></svg>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="challenge" aria-live="polite">
+        <div class="prompt-label" id="promptLabel">请在地图上点出</div>
+        <p class="prompt" id="prompt">北京</p>
+        <div class="hint" id="hint">先看它在中国的大致方位，再点击省份轮廓。</div>
+        <div class="feedback" id="feedback"></div>
+      </section>
+
+      <div class="answer-dock">
+        <form class="answer-form" id="answerForm" autocomplete="off">
+          <input id="answerInput" type="text" inputmode="text" placeholder="输入省份名称，如：广东" aria-label="输入答案">
+          <button class="btn primary" id="submitAnswerBtn" type="submit">提交</button>
+        </form>
+        <div class="actions">
+          <button class="btn" id="nextBtn" type="button">下一题</button>
+          <button class="btn" id="hintBtn" type="button">提示</button>
+        </div>
+      </div>
+
+      <section class="card" id="infoCard">
+        <h2>点击任意省份</h2>
+        <div class="meta">查看省会、位置、景区、美食、名人和代表城市。</div>
+        <div class="facts">
+          <div class="fact"><span class="tag">地图</span><span>本版使用省级 GeoJSON 边界绘制，位置和轮廓比第一版更接近真实地图。</span></div>
+        </div>
+      </section>
+
+      <section class="mistakes">
+        <strong>错题本</strong>
+        <div class="mistake-list" id="mistakeList">答错的省份会出现在这里，方便复习。</div>
+      </section>
+
+      <div class="footer-note">
+        “自由学”模式不答题，点哪里就介绍哪里。边界数据来自 DataV GeoAtlas 省级 GeoJSON，本游戏用于学习行政区大致位置与人文知识。
+      </div>
+    </aside>
+  </main>
+
+  <script src="map-data.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
