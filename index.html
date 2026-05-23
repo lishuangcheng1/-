@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>中国地图学习小游戏</title>
-  <link rel="stylesheet" href="style.css?v=mobile-20260523-4">
+  <link rel="stylesheet" href="style.css?v=mobile-20260523-5">
 </head>
 <body>
   <main class="app">
@@ -47,9 +47,14 @@
 
     <aside class="side">
       <section class="challenge" aria-live="polite">
-        <div class="prompt-label" id="promptLabel">请在地图上点出</div>
-        <p class="prompt" id="prompt">北京</p>
-        <div class="hint" id="hint">先看它在中国的大致方位，再点击省份轮廓。</div>
+        <div class="challenge-head">
+          <div>
+            <div class="prompt-label" id="promptLabel">请在地图上点出</div>
+            <p class="prompt" id="prompt">北京</p>
+          </div>
+          <button class="mini-next" id="miniNextBtn" type="button">下一题</button>
+        </div>
+        <div class="hint" id="hint">点击地图作答，答完可慢慢看知识卡。</div>
         <div class="feedback" id="feedback"></div>
       </section>
 
@@ -83,7 +88,7 @@
     </aside>
   </main>
 
-  <script src="map-data.js?v=mobile-20260523-4"></script>
-  <script src="main.js?v=mobile-20260523-4"></script>
+  <script src="map-data.js?v=mobile-20260523-5"></script>
+  <script src="main.js?v=mobile-20260523-5"></script>
 </body>
 </html>

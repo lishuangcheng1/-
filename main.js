@@ -46,6 +46,7 @@ const knowledge = {
     const feedbackEl = document.querySelector("#feedback");
     const infoCard = document.querySelector("#infoCard");
     const nextBtn = document.querySelector("#nextBtn");
+    const miniNextBtn = document.querySelector("#miniNextBtn");
     const hintBtn = document.querySelector("#hintBtn");
     const answerForm = document.querySelector("#answerForm");
     const answerInput = document.querySelector("#answerInput");
@@ -242,7 +243,7 @@ const knowledge = {
       answerInput.disabled = mode === "study";
       submitAnswerBtn.disabled = mode === "study";
       answerInput.placeholder = mode === "study" ? "自由学模式无需答题" : "输入省份名称，如：广东";
-      hintEl.textContent = mode === "study" ? "学习模式下，点击地图任意省份查看知识卡。" : "先看它在中国的大致方位，再点击省份轮廓。";
+      hintEl.textContent = mode === "study" ? "点击任意省份查看知识卡。" : "点击地图作答，答完可慢慢看知识卡。";
       clearMapState();
 
       if (mode === "locate") {
@@ -286,7 +287,6 @@ const knowledge = {
         revealAnswer();
         showInfo(target.feature.properties.name, true);
         feedbackEl.textContent = `答对了：${knowledge[name].short}，属于${knowledge[name].region}。`;
-        scheduleNext(4200);
       } else {
         answered = true;
         document.body.dataset.answered = "true";
@@ -297,7 +297,6 @@ const knowledge = {
         showInfo(target.feature.properties.name, true);
         feedbackEl.textContent = `答错了。正确答案：${target.data.short}。${target.data.clue}`;
         renderMistakes();
-        scheduleNext(5200);
       }
       updateStats();
     }
@@ -400,6 +399,12 @@ const knowledge = {
     }
 
     nextBtn.addEventListener("click", () => {
+      clearTimeout(autoNextTimer);
+      round = (round % Math.max(1, pickPool().length)) + 1;
+      pickTarget();
+    });
+
+    miniNextBtn.addEventListener("click", () => {
       clearTimeout(autoNextTimer);
       round = (round % Math.max(1, pickPool().length)) + 1;
       pickTarget();
