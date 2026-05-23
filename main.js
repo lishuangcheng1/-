@@ -234,6 +234,8 @@ const knowledge = {
       const candidates = pool.filter((item) => !target || item.feature.properties.name !== target.feature.properties.name);
       target = candidates[Math.floor(Math.random() * candidates.length)] || pool[0];
       answered = mode === "study";
+      document.body.dataset.mode = mode;
+      document.body.dataset.answered = answered ? "true" : "false";
       map.classList.toggle("study-mode", mode === "study");
       feedbackEl.textContent = "";
       answerInput.value = "";
@@ -272,6 +274,7 @@ const knowledge = {
       const right = name === target.feature.properties.name;
       if (right) {
         answered = true;
+        document.body.dataset.answered = "true";
         score += 10 + Math.min(streak, 5) * 2;
         streak += 1;
         path.classList.add("correct", "target");
@@ -281,6 +284,7 @@ const knowledge = {
         scheduleNext(4200);
       } else {
         answered = true;
+        document.body.dataset.answered = "true";
         streak = 0;
         mistakes.set(target.feature.properties.name, target.data.short);
         path.classList.add("wrong");
