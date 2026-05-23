@@ -383,13 +383,12 @@
 
     @media (max-width: 768px) {
       :root {
-        --mobile-dock: 134px;
-        --mobile-question: 104px;
+        --mobile-question: 92px;
       }
 
       body {
         min-height: 100dvh;
-        padding-bottom: calc(var(--mobile-dock) + env(safe-area-inset-bottom));
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
         overflow-x: hidden;
         font-size: 15px;
         background: linear-gradient(145deg, #f4faf6 0%, #eef6f1 100%);
@@ -402,16 +401,17 @@
       }
 
       .map-area {
-        min-height: calc(100dvh - var(--mobile-dock) - 12px);
+        min-height: calc(100dvh - 12px);
         border-radius: 8px;
         grid-template-rows: auto auto minmax(45dvh, 1fr);
       }
 
       .topbar {
         align-items: center;
+        justify-content: center;
         flex-direction: row;
-        gap: 8px;
-        padding: 7px 9px;
+        gap: 0;
+        padding: 6px 8px;
       }
 
       h1 {
@@ -422,25 +422,13 @@
       }
 
       .stats {
-        flex: 1;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 5px;
-        justify-content: stretch;
-      }
-
-      .pill {
-        justify-content: center;
-        min-height: 28px;
-        padding: 3px 5px;
-        border-radius: 999px;
-        font-size: 14px;
+        display: none;
       }
 
       .toolbar {
         grid-template-columns: 1fr;
-        gap: 5px;
-        padding: 6px 9px;
+        gap: 0;
+        padding: 4px 8px 6px;
       }
 
       .segmented {
@@ -456,30 +444,25 @@
 
       .segmented button {
         flex: 1 0 25%;
-        min-width: 78px;
-        min-height: 44px;
-        padding: 0 4px;
-        font-size: 15px;
+        min-width: 68px;
+        min-height: 36px;
+        padding: 0 3px;
+        font-size: 13px;
       }
 
       select {
-        min-height: 36px;
-        padding: 0 10px;
-        border-radius: 8px;
-        font-size: 14px;
-        color: var(--muted);
-        background: rgba(255, 255, 255, .82);
+        display: none;
       }
 
       .map-wrap {
-        min-height: 360px;
-        height: calc(100dvh - var(--mobile-dock) - var(--mobile-question) - 138px);
-        max-height: 56dvh;
-        padding: 4px;
+        min-height: 430px;
+        height: calc(100dvh - var(--mobile-question) - 92px);
+        max-height: 68dvh;
+        padding: 3px;
       }
 
       #map {
-        min-height: 360px;
+        min-height: 430px;
         height: 100%;
         border-radius: 8px;
       }
@@ -527,9 +510,9 @@
         position: fixed;
         left: 8px;
         right: 8px;
-        bottom: calc(var(--mobile-dock) + env(safe-area-inset-bottom) + 8px);
+        bottom: calc(10px + env(safe-area-inset-bottom));
         z-index: 20;
-        padding: 9px 12px 10px;
+        padding: 8px 12px 9px;
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(22, 35, 45, .16);
       }
@@ -547,16 +530,16 @@
 
       .hint {
         min-height: 0;
-        margin-top: 5px;
-        font-size: 14px;
-        line-height: 1.35;
+        margin-top: 4px;
+        font-size: 13px;
+        line-height: 1.3;
       }
 
       .feedback {
         position: fixed;
         left: 12px;
         right: 12px;
-        bottom: calc(var(--mobile-dock) + var(--mobile-question) + env(safe-area-inset-bottom) + 18px);
+        bottom: calc(var(--mobile-question) + env(safe-area-inset-bottom) + 22px);
         z-index: 22;
         min-height: 0;
         padding: 8px 11px;
@@ -574,16 +557,7 @@
       }
 
       .answer-dock {
-        position: fixed;
-        left: 8px;
-        right: 8px;
-        bottom: max(8px, env(safe-area-inset-bottom));
-        z-index: 23;
-        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: rgba(255, 255, 255, .98);
-        box-shadow: 0 -8px 28px rgba(22, 35, 45, .18);
+        display: none;
       }
 
       .answer-form {
@@ -629,14 +603,13 @@
       body[data-answered="true"]:not([data-mode="study"]) .card {
         display: block;
         margin-top: 8px;
-        margin-bottom: calc(var(--mobile-dock) + var(--mobile-question) + 20px);
+        margin-bottom: calc(var(--mobile-question) + env(safe-area-inset-bottom) + 22px);
       }
 
       body[data-mode="study"] {
         padding-bottom: calc(12px + env(safe-area-inset-bottom));
       }
 
-      body[data-mode="study"] .answer-dock,
       body[data-mode="study"] .challenge {
         display: none;
       }
@@ -682,15 +655,15 @@
       }
 
       .segmented button {
-        min-width: 74px;
-        font-size: 14px;
+        min-width: 64px;
+        font-size: 12px;
       }
 
       .map-wrap {
-        min-height: 330px;
+        min-height: 400px;
       }
 
       #map {
-        min-height: 330px;
+        min-height: 400px;
       }
     }
