@@ -824,7 +824,7 @@
 
         if (state.mode === "free") {
           showProvince(guess);
-          setResult(`正在学习 ${guess}。`, "good");
+          setResult(`正在学习 ${guess}，右侧已经更新知识卡。`, "good");
           return;
         }
 
@@ -877,7 +877,7 @@
 
       function smartHint() {
         if (state.mode === "free") {
-          setResult("自由学习模式下，直接点击地图上的省份就可以看知识卡。");
+          setResult(`自由学习模式下，直接点击地图上的${state.scope === "sichuan" ? "地市州" : "省份"}就可以看知识卡。`);
           return;
         }
         const info = infoOf(state.question);
@@ -938,7 +938,7 @@
         ];
         const paths = features.map((feature) => {
           const name = featureDisplayName(feature);
-          return `<path class="province" data-name="${name}" d="${pathsFromGeometry(feature.geometry, project)}"><title>${name}</title></path>`;
+          return `<path class="province" data-name="${name}" d="${pathsFromGeometry(feature.geometry, project)}"></path>`;
         }).join("");
         els.map.innerHTML = `<g id="mapLayer">${paths}</g>`;
         els.loading.hidden = true;
@@ -1028,7 +1028,14 @@
 
       document.addEventListener("click", (event) => {
         const province = event.target.closest(".province");
-        if (province) answerWith(province.dataset.name);
+        if (province) {
+          if (state.mode === "free") {
+            showProvince(province.dataset.name);
+            setResult(`正在学习 ${province.dataset.name}，右侧已经更新知识卡。`, "good");
+          } else {
+            answerWith(province.dataset.name);
+          }
+        }
         const tab = event.target.closest(".tab");
         if (tab) {
           state.mode = tab.dataset.mode;
