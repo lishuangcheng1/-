@@ -558,7 +558,7 @@
 
           <section class="card">
             <b>错题本</b>
-            <p class="sub">答错的省份会出现在这里，点一下就能复习。</p>
+            <p class="sub" id="wrongHelp">答错的省份会出现在这里，点一下就能复习。</p>
             <div class="wrong-list" id="wrongList"></div>
           </section>
 
@@ -745,6 +745,8 @@
         intro: document.querySelector("#provinceIntro"),
         facts: document.querySelector("#facts"),
         wrongList: document.querySelector("#wrongList"),
+        wrongHelp: document.querySelector("#wrongHelp"),
+        map: document.querySelector("#map"),
         regionFilter: document.querySelector("#regionFilter"),
       };
 
@@ -989,6 +991,9 @@
         els.capitalTab.textContent = scope === "sichuan" ? "猜驻地" : "猜省会";
         els.title.textContent = scope === "sichuan" ? "点击任意地市州" : "点击任意省份";
         els.intro.textContent = scope === "sichuan" ? "查看驻地、区域、景区、美食和代表区县。" : "查看省会、位置、景区、美食、名人和代表城市。";
+        els.answer.placeholder = scope === "sichuan" ? "输入答案，如：成都" : "输入答案，如：广东";
+        els.wrongHelp.textContent = scope === "sichuan" ? "答错的地市州会出现在这里，点一下就能复习。" : "答错的省份会出现在这里，点一下就能复习。";
+        els.map.setAttribute("aria-label", scope === "sichuan" ? "四川地市州学习地图" : "中国省级行政区地图");
         els.facts.innerHTML = "";
         setResult(scope === "sichuan" ? "已切换到四川地市州闯关。按 N 下一题，按 H 要提示。" : "已切换到全国省份闯关。");
         if (scope === "sichuan") {
