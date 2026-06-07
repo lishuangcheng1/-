@@ -1,94 +1,1064 @@
 <!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>中国地图学习小游戏</title>
-  <link rel="stylesheet" href="style.css?v=mobile-20260523-5">
-</head>
-<body>
-  <main class="app">
-    <section class="map-area" aria-label="中国地图学习区">
-      <div class="topbar">
-        <h1>中国地图闯关</h1>
-        <div class="stats" aria-live="polite">
-          <span class="pill">得分 <strong id="score">0</strong></span>
-          <span class="pill">连对 <strong id="streak">0</strong></span>
-          <span class="pill">题目 <strong id="round">1</strong>/<strong id="total">34</strong></span>
-        </div>
-      </div>
-      <div class="toolbar">
-        <div class="segmented" role="tablist" aria-label="学习模式">
-          <button class="active" data-mode="locate" type="button">找位置</button>
-          <button data-mode="capital" type="button">猜省会</button>
-          <button data-mode="feature" type="button">猜特色</button>
-          <button data-mode="study" type="button">自由学</button>
-        </div>
-        <select id="regionFilter" aria-label="地区筛选">
-          <option value="all">全部地区</option>
-          <option value="东北">东北</option>
-          <option value="华北">华北</option>
-          <option value="华东">华东</option>
-          <option value="华中">华中</option>
-          <option value="华南">华南</option>
-          <option value="西南">西南</option>
-          <option value="西北">西北</option>
-        </select>
-      </div>
-      <div class="map-wrap">
-        <div class="zoom-controls" aria-label="地图缩放控制">
-          <button id="zoomInBtn" type="button" title="放大">+</button>
-          <button id="zoomOutBtn" type="button" title="缩小">-</button>
-          <button id="resetMapBtn" type="button" title="复位">⌂</button>
-        </div>
-        <svg id="map" viewBox="0 0 1000 760" role="img" aria-label="中国省级行政区地图"></svg>
-      </div>
-    </section>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>中国地图闯关 Pro</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #162235;
+        --muted: #65758b;
+        --line: #dbe6ef;
+        --paper: #ffffff;
+        --soft: #f3f8f6;
+        --brand: #12835f;
+        --brand-dark: #0b664a;
+        --brand-soft: #dff5ec;
+        --warn: #b7791f;
+        --bad: #c24135;
+        --good: #16825d;
+        --shadow: 0 18px 45px rgba(20, 50, 80, 0.12);
+      }
 
-    <aside class="side">
-      <section class="challenge" aria-live="polite">
-        <div class="challenge-head">
-          <div>
-            <div class="prompt-label" id="promptLabel">请在地图上点出</div>
-            <p class="prompt" id="prompt">北京</p>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 10%, rgba(18, 131, 95, 0.16), transparent 30%),
+          linear-gradient(135deg, #f7fbf7 0%, #edf6fb 100%);
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .app {
+        width: min(1440px, calc(100% - 32px));
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 22px 0;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: 0;
+      }
+
+      .title p {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .scope-switch {
+        display: inline-grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-top: 12px;
+        padding: 5px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.74);
+      }
+
+      .scope-btn {
+        min-height: 36px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 7px;
+        color: var(--muted);
+        background: transparent;
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .scope-btn.active {
+        color: #fff;
+        background: linear-gradient(135deg, var(--brand), #20a06f);
+        box-shadow: 0 8px 18px rgba(18, 131, 95, 0.22);
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        min-width: 96px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: 0 8px 20px rgba(20, 50, 80, 0.06);
+      }
+
+      .pill strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .pill span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(680px, 1fr) 380px;
+        gap: 18px;
+        align-items: stretch;
+      }
+
+      .panel {
+        border: 1px solid rgba(219, 230, 239, 0.9);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .map-panel {
+        min-height: calc(100vh - 120px);
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr 180px;
+        gap: 12px;
+        padding: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+
+      .tab,
+      .ghost,
+      .primary {
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+        font-weight: 700;
+      }
+
+      .tab.active,
+      .primary {
+        border-color: var(--brand);
+        background: var(--brand);
+        color: #fff;
+      }
+
+      select,
+      input {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        padding: 0 12px;
+        outline: none;
+      }
+
+      input:focus,
+      select:focus,
+      button:focus-visible {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(18, 131, 95, 0.16);
+      }
+
+      .map-wrap {
+        position: relative;
+        height: calc(100vh - 220px);
+        min-height: 610px;
+        background:
+          linear-gradient(rgba(18, 131, 95, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(18, 131, 95, 0.045) 1px, transparent 1px),
+          #f8fcfb;
+        background-size: 44px 44px;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .province {
+        fill: #e5f2ea;
+        stroke: #9ab7ad;
+        stroke-width: 0.8;
+        vector-effect: non-scaling-stroke;
+        cursor: pointer;
+        transition: fill 140ms ease, filter 140ms ease;
+      }
+
+      .province:hover,
+      .province.focused {
+        fill: #bfe7d3;
+        filter: drop-shadow(0 5px 7px rgba(12, 70, 50, 0.16));
+      }
+
+      .province.correct {
+        fill: #47c98f;
+      }
+
+      .province.wrong {
+        fill: #ef8a7d;
+      }
+
+      .province.learned {
+        fill: #d9efe5;
+      }
+
+      .city-node {
+        cursor: pointer;
+      }
+
+      .city-node circle {
+        fill: #e5f2ea;
+        stroke: #8fb5a8;
+        stroke-width: 2;
+        transition: fill 140ms ease, transform 140ms ease, filter 140ms ease;
+      }
+
+      .city-node text {
+        fill: var(--ink);
+        font-size: 21px;
+        font-weight: 800;
+        pointer-events: none;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+
+      .city-node:hover circle,
+      .city-node.focused circle {
+        fill: #bfe7d3;
+        filter: drop-shadow(0 10px 12px rgba(12, 70, 50, 0.18));
+      }
+
+      .city-node.correct circle {
+        fill: #47c98f;
+      }
+
+      .city-node.wrong circle {
+        fill: #ef8a7d;
+      }
+
+      .city-node.learned circle {
+        fill: #d9efe5;
+      }
+
+      .sichuan-backdrop {
+        fill: rgba(18, 131, 95, 0.06);
+        stroke: rgba(18, 131, 95, 0.18);
+        stroke-width: 2;
+      }
+
+      .zoom {
+        position: absolute;
+        right: 16px;
+        top: 16px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .zoom button {
+        width: 42px;
+        height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 8px 20px rgba(20, 50, 80, 0.12);
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .side {
+        display: grid;
+        gap: 14px;
+      }
+
+      .card {
+        padding: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .card:last-child {
+        border-bottom: 0;
+      }
+
+      .question-label {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .question {
+        margin: 8px 0 4px;
+        font-size: 30px;
+        line-height: 1.15;
+      }
+
+      .sub {
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .answer-row {
+        display: grid;
+        grid-template-columns: 1fr 92px;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .result {
+        min-height: 46px;
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 8px;
+        background: var(--soft);
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .result.good {
+        background: #e3f7ee;
+        color: var(--good);
+      }
+
+      .result.bad {
+        background: #fff0ed;
+        color: var(--bad);
+      }
+
+      .knowledge h2 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+
+      .facts {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .fact {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #f7faf9;
+      }
+
+      .fact b {
+        color: var(--brand-dark);
+      }
+
+      .wrong-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        min-height: 38px;
+        margin-top: 10px;
+      }
+
+      .chip {
+        border: 1px solid #f0d1ca;
+        border-radius: 999px;
+        background: #fff7f5;
+        color: #a94235;
+        padding: 7px 10px;
+        cursor: pointer;
+      }
+
+      .shortcuts {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      kbd {
+        display: inline-block;
+        min-width: 24px;
+        padding: 2px 6px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--ink);
+        text-align: center;
+        font-weight: 700;
+      }
+
+      .loading {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        color: var(--muted);
+        text-align: center;
+        background: rgba(248, 252, 251, 0.86);
+      }
+
+      .loading[hidden] {
+        display: none;
+      }
+
+      @media (max-width: 1080px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .map-panel {
+          min-height: auto;
+        }
+
+        .map-wrap {
+          height: 68vh;
+          min-height: 520px;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .app {
+          width: min(100% - 18px, 1440px);
+          padding: 12px 0;
+        }
+
+        .topbar,
+        .toolbar {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .stats,
+        .tabs {
+          grid-template-columns: repeat(2, 1fr);
+          display: grid;
+        }
+
+        .title h1 {
+          font-size: 28px;
+        }
+
+        .map-wrap {
+          min-height: 430px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div class="title">
+          <h1>中国地图闯关 Pro</h1>
+          <p id="subtitle">更适合电脑大屏的中国地理小游戏：点地图、猜省会、猜特色、自由学习。</p>
+          <div class="scope-switch" aria-label="地图范围">
+            <button class="scope-btn active" data-scope="china">全国省份</button>
+            <button class="scope-btn" data-scope="sichuan">四川地市州</button>
           </div>
-          <button class="mini-next" id="miniNextBtn" type="button">下一题</button>
         </div>
-        <div class="hint" id="hint">点击地图作答，答完可慢慢看知识卡。</div>
-        <div class="feedback" id="feedback"></div>
-      </section>
-
-      <div class="answer-dock">
-        <form class="answer-form" id="answerForm" autocomplete="off">
-          <input id="answerInput" type="text" inputmode="text" placeholder="输入省份名称，如：广东" aria-label="输入答案">
-          <button class="btn primary" id="submitAnswerBtn" type="submit">提交</button>
-        </form>
-        <div class="actions">
-          <button class="btn" id="nextBtn" type="button">下一题</button>
-          <button class="btn" id="hintBtn" type="button">提示</button>
+        <div class="stats" aria-label="游戏状态">
+          <div class="pill"><strong id="score">0</strong><span>得分</span></div>
+          <div class="pill"><strong id="streak">0</strong><span>连对</span></div>
+          <div class="pill"><strong id="progress">1/34</strong><span>进度</span></div>
+          <div class="pill"><strong id="accuracy">0%</strong><span>正确率</span></div>
         </div>
-      </div>
+      </header>
 
-      <section class="card" id="infoCard">
-        <h2>点击任意省份</h2>
-        <div class="meta">查看省会、位置、景区、美食、名人和代表城市。</div>
-        <div class="facts">
-          <div class="fact"><span class="tag">地图</span><span>本版使用省级 GeoJSON 边界绘制，位置和轮廓比第一版更接近真实地图。</span></div>
-        </div>
+      <section class="layout">
+        <section class="panel map-panel" aria-label="中国地图学习区">
+          <div class="toolbar">
+            <div class="tabs" role="tablist" aria-label="学习模式">
+              <button class="tab active" data-mode="locate">找位置</button>
+              <button class="tab" data-mode="capital" id="capitalTab">猜省会</button>
+              <button class="tab" data-mode="feature">猜特色</button>
+              <button class="tab" data-mode="free">自由学</button>
+            </div>
+            <select id="regionFilter" aria-label="地区筛选">
+              <option value="all">全部地区</option>
+              <option value="华北">华北</option>
+              <option value="东北">东北</option>
+              <option value="华东">华东</option>
+              <option value="华中">华中</option>
+              <option value="华南">华南</option>
+              <option value="西南">西南</option>
+              <option value="西北">西北</option>
+              <option value="港澳台">港澳台</option>
+            </select>
+          </div>
+          <div class="map-wrap">
+            <svg id="map" viewBox="0 0 1000 760" role="img" aria-label="中国省级行政区地图"></svg>
+            <div class="zoom" aria-label="地图缩放控制">
+              <button id="zoomIn" title="放大">+</button>
+              <button id="zoomOut" title="缩小">-</button>
+              <button id="resetView" title="复位">⌂</button>
+            </div>
+            <div class="loading" id="loading">正在读取地图数据。如果长时间没有地图，请确认电脑能访问 GitHub Pages。</div>
+          </div>
+        </section>
+
+        <aside class="panel side">
+          <section class="card">
+            <div class="question-label" id="questionLabel">请在地图上点出</div>
+            <h2 class="question" id="question">甘肃</h2>
+            <p class="sub" id="questionHelp">点击地图作答，也可以在输入框里输入省份名称。</p>
+            <div class="answer-row">
+              <input id="answer" placeholder="输入答案，如：广东" autocomplete="off">
+              <button class="primary" id="submit">提交</button>
+            </div>
+            <div class="controls">
+              <button class="ghost" id="next">下一题</button>
+              <button class="ghost" id="hint">智能提示</button>
+            </div>
+            <div class="result" id="result">准备好了。电脑上可以直接用键盘：Enter 提交，N 下一题，H 提示。</div>
+          </section>
+
+          <section class="card knowledge">
+            <h2 id="provinceTitle">点击任意省份</h2>
+            <p class="sub" id="provinceIntro">查看省会、位置、景区、美食、名人和代表城市。</p>
+            <div class="facts" id="facts"></div>
+          </section>
+
+          <section class="card">
+            <b>错题本</b>
+            <p class="sub">答错的省份会出现在这里，点一下就能复习。</p>
+            <div class="wrong-list" id="wrongList"></div>
+          </section>
+
+          <section class="card">
+            <b>电脑快捷键</b>
+            <div class="shortcuts">
+              <span><kbd>Enter</kbd> 提交</span>
+              <span><kbd>N</kbd> 下一题</span>
+              <span><kbd>H</kbd> 提示</span>
+              <span><kbd>Esc</kbd> 清空</span>
+              <span><kbd>+</kbd> 放大</span>
+              <span><kbd>-</kbd> 缩小</span>
+            </div>
+          </section>
+        </aside>
       </section>
+    </main>
 
-      <section class="mistakes">
-        <strong>错题本</strong>
-        <div class="mistake-list" id="mistakeList">答错的省份会出现在这里，方便复习。</div>
-      </section>
+    <script>
+      const GEOJSON_URL = "https://lishuangcheng1.github.io/-/china-provinces.geojson";
+      const provinceInfo = {
+        北京: ["北京", "华北", "故宫、长城", "烤鸭、炸酱面", "中国首都，政治文化中心", "北京市"],
+        天津: ["天津", "华北", "天津之眼、五大道", "狗不理包子、煎饼馃子", "海河之城，近代建筑丰富", "天津市"],
+        河北: ["石家庄", "华北", "承德避暑山庄、山海关", "驴肉火烧", "环抱京津，连接华北与东北", "唐山、保定、秦皇岛"],
+        山西: ["太原", "华北", "平遥古城、云冈石窟", "刀削面", "表里山河，煤炭和古建资源丰富", "大同、临汾"],
+        内蒙古: ["呼和浩特", "华北", "呼伦贝尔草原、响沙湾", "手把肉、奶茶", "横跨东北、华北、西北的草原地区", "包头、鄂尔多斯"],
+        辽宁: ["沈阳", "东北", "沈阳故宫、大连海滨", "锅包肉、海鲜", "东北重要工业基地和沿海省份", "大连、鞍山"],
+        吉林: ["长春", "东北", "长白山、伪满皇宫", "冷面、人参鸡汤", "汽车工业和冰雪旅游突出", "吉林市、延边"],
+        黑龙江: ["哈尔滨", "东北", "冰雪大世界、五大连池", "红肠、锅包肉", "中国最北省份，冰雪特色鲜明", "齐齐哈尔、大庆"],
+        上海: ["上海", "华东", "外滩、陆家嘴", "生煎、小笼包", "国际化大都市和金融中心", "上海市"],
+        江苏: ["南京", "华东", "苏州园林、中山陵", "盐水鸭、阳澄湖大闸蟹", "江南水乡与制造业强省", "苏州、无锡、徐州"],
+        浙江: ["杭州", "华东", "西湖、乌镇", "东坡肉、龙井虾仁", "民营经济活跃，山海水乡兼备", "宁波、温州"],
+        安徽: ["合肥", "华东", "黄山、宏村", "臭鳜鱼、毛豆腐", "皖南山水和徽文化代表省份", "芜湖、黄山"],
+        福建: ["福州", "华东", "武夷山、鼓浪屿", "佛跳墙、沙茶面", "山海相依，闽南文化和茶文化突出", "厦门、泉州"],
+        江西: ["南昌", "华东", "庐山、滕王阁", "瓦罐汤、拌粉", "红色文化、陶瓷文化和山水资源丰富", "景德镇、赣州"],
+        山东: ["济南", "华东", "泰山、曲阜三孔", "煎饼、鲁菜", "齐鲁文化发源地，半岛经济活跃", "青岛、烟台"],
+        河南: ["郑州", "华中", "少林寺、龙门石窟", "烩面、胡辣汤", "中原腹地，古都密集", "洛阳、开封"],
+        湖北: ["武汉", "华中", "黄鹤楼、神农架", "热干面、武昌鱼", "九省通衢，长江中游核心省份", "宜昌、襄阳"],
+        湖南: ["长沙", "华中", "张家界、岳麓山", "臭豆腐、剁椒鱼头", "湖湘文化鲜明，山水与红色资源丰富", "株洲、岳阳"],
+        广东: ["广州", "华南", "丹霞山、长隆", "早茶、烧鹅", "改革开放前沿，粤港澳大湾区核心", "深圳、珠海、佛山"],
+        广西: ["南宁", "华南", "桂林山水、德天瀑布", "螺蛳粉、桂林米粉", "山水甲天下，壮族文化鲜明", "桂林、柳州"],
+        海南: ["海口", "华南", "三亚、蜈支洲岛", "椰子鸡、清补凉", "热带海岛旅游和自贸港", "三亚、儋州"],
+        重庆: ["重庆", "西南", "洪崖洞、武隆天坑", "火锅、小面", "山城、桥都，长江上游中心城市", "重庆市"],
+        四川: ["成都", "西南", "九寨沟、峨眉山", "火锅、担担面", "天府之国，熊猫和川菜名片突出", "绵阳、乐山"],
+        贵州: ["贵阳", "西南", "黄果树瀑布、荔波", "酸汤鱼、丝娃娃", "喀斯特地貌典型，民族文化丰富", "遵义、安顺"],
+        云南: ["昆明", "西南", "丽江古城、石林", "过桥米线、鲜花饼", "彩云之南，民族和自然景观多样", "大理、丽江"],
+        西藏: ["拉萨", "西南", "布达拉宫、纳木错", "酥油茶、糌粑", "世界屋脊，高原文化独特", "日喀则、林芝"],
+        陕西: ["西安", "西北", "兵马俑、华山", "肉夹馍、凉皮", "十三朝古都所在地，历史文化厚重", "宝鸡、延安"],
+        甘肃: ["兰州", "西北", "敦煌莫高窟、张掖丹霞", "兰州牛肉面", "河西走廊贯穿东西，丝路文化鲜明", "天水、酒泉"],
+        青海: ["西宁", "西北", "青海湖、茶卡盐湖", "手抓羊肉、酸奶", "三江源所在地，高原湖泊壮美", "海东、格尔木"],
+        宁夏: ["银川", "西北", "沙坡头、西夏王陵", "羊肉臊子面", "塞上江南，黄河灌区特色明显", "石嘴山、吴忠"],
+        新疆: ["乌鲁木齐", "西北", "天山天池、喀纳斯", "大盘鸡、烤包子", "中国陆地面积最大省级行政区", "喀什、伊犁"],
+        香港: ["香港", "港澳台", "维多利亚港、太平山", "港式点心、菠萝包", "国际金融、航运和贸易中心", "香港"],
+        澳门: ["澳门", "港澳台", "大三巴牌坊、妈阁庙", "葡挞、猪扒包", "中西文化交融的特别行政区", "澳门"],
+        台湾: ["台北", "港澳台", "日月潭、阿里山", "卤肉饭、珍珠奶茶", "位于中国东南海域的宝岛", "高雄、台中"],
+      };
 
-      <div class="footer-note">
-        “自由学”模式不答题，点哪里就介绍哪里。边界数据来自 DataV GeoAtlas 省级 GeoJSON，本游戏用于学习行政区大致位置与人文知识。
-      </div>
-    </aside>
-  </main>
+      const sichuanInfo = {
+        成都: ["成都", "成都平原", "武侯祠、杜甫草堂、宽窄巷子", "担担面、钟水饺、火锅", "四川省会，成都平原核心城市，交通和文旅资源集中", "锦江、青羊、武侯、金牛、成华"],
+        自贡: ["自贡", "川南", "恐龙博物馆、彩灯大世界", "冷吃兔、鲜锅兔", "因盐而兴，以彩灯和恐龙化石闻名", "荣县、富顺"],
+        攀枝花: ["攀枝花", "攀西", "格萨拉、二滩水电站", "盐边羊肉米线、芒果", "金沙江畔的阳光花城，矿产和热带水果资源突出", "米易、盐边"],
+        泸州: ["泸州", "川南", "泸州老窖旅游区、尧坝古镇", "泸州白糕、黄粑", "长江与沱江交汇处，酒城名片鲜明", "合江、叙永、古蔺"],
+        德阳: ["德阳", "成都平原", "三星堆、德阳文庙", "广汉缠丝兔、什邡板鸭", "装备制造重镇，三星堆文化影响力很强", "广汉、什邡、绵竹"],
+        绵阳: ["绵阳", "川北", "北川羌城、越王楼", "米粉、梓潼片粉", "中国科技城，连接成都平原与川北山区", "江油、三台、北川"],
+        广元: ["广元", "川北", "剑门关、昭化古城", "女皇蒸凉面、核桃饼", "川陕甘结合部，剑门蜀道文化厚重", "苍溪、剑阁、旺苍"],
+        遂宁: ["遂宁", "川中", "中国死海、灵泉寺", "豆腐皮、蓬溪姜糕", "成渝之间的重要节点城市，观音文化知名", "射洪、蓬溪、大英"],
+        内江: ["内江", "川南", "张大千纪念馆、隆昌石牌坊", "牛肉面、蜜饯", "甜城内江，位于沱江流域", "隆昌、资中、威远"],
+        乐山: ["乐山", "川南", "乐山大佛、峨眉山", "跷脚牛肉、甜皮鸭", "世界遗产资源突出，三江汇流", "峨眉山、犍为、夹江"],
+        南充: ["南充", "川东北", "阆中古城、朱德故里", "川北凉粉、张飞牛肉", "嘉陵江流域中心城市，历史文化资源丰富", "阆中、仪陇、南部"],
+        眉山: ["眉山", "成都平原", "三苏祠、瓦屋山", "东坡肘子、泡菜", "三苏故里，东坡文化代表城市", "仁寿、彭山、洪雅"],
+        宜宾: ["宜宾", "川南", "蜀南竹海、李庄古镇", "燃面、五粮液", "长江首城，酒文化和竹文化突出", "长宁、兴文、珙县"],
+        广安: ["广安", "川东北", "邓小平故里、华蓥山", "盐皮蛋、岳池米粉", "川东门户之一，红色文化资源突出", "岳池、武胜、邻水"],
+        达州: ["达州", "川东北", "賨人谷、巴山大峡谷", "灯影牛肉、渠县黄花", "川渝陕结合部，巴文化和天然气资源突出", "宣汉、渠县、大竹"],
+        雅安: ["雅安", "川西", "碧峰峡、蒙顶山", "雅鱼、蒙顶山茶", "雨城雅安，是川藏通道重要节点", "汉源、石棉、荥经"],
+        巴中: ["巴中", "川东北", "光雾山、川陕革命根据地", "南江黄羊、恩阳十大碗", "大巴山南麓，红色文化和山地景观突出", "南江、通江、平昌"],
+        资阳: ["资阳", "川中", "安岳石刻、陈毅故里", "安岳柠檬、乐至烤肉", "连接成都和重庆的重要节点城市", "安岳、乐至"],
+        阿坝: ["马尔康", "川西北", "九寨沟、黄龙、四姑娘山", "牦牛肉、酥油茶", "高原风光和藏羌文化代表地区", "汶川、理县、九寨沟"],
+        甘孜: ["康定", "川西", "稻城亚丁、海螺沟、塔公草原", "酥油茶、牦牛肉", "川西高原核心地区，雪山草原和康巴文化鲜明", "康定、理塘、稻城"],
+        凉山: ["西昌", "攀西", "邛海、螺髻山、泸沽湖", "坨坨肉、火盆烧烤", "攀西地区重要州府，彝族文化和阳光资源突出", "西昌、会理、冕宁"],
+      };
 
-  <script src="map-data.js?v=mobile-20260523-5"></script>
-  <script src="main.js?v=mobile-20260523-5"></script>
-</body>
+      const sichuanNodes = [
+        ["成都", 470, 340], ["德阳", 500, 270], ["绵阳", 560, 215], ["广元", 625, 120],
+        ["巴中", 710, 190], ["达州", 805, 250], ["广安", 770, 345], ["南充", 665, 310],
+        ["遂宁", 600, 365], ["资阳", 560, 450], ["眉山", 455, 455], ["雅安", 345, 445],
+        ["乐山", 430, 550], ["自贡", 560, 560], ["内江", 630, 515], ["泸州", 695, 610],
+        ["宜宾", 585, 650], ["攀枝花", 300, 665], ["凉山", 360, 600], ["阿坝", 335, 210],
+        ["甘孜", 210, 430],
+      ];
+
+      const aliases = {
+        内蒙古自治区: "内蒙古",
+        广西壮族自治区: "广西",
+        西藏自治区: "西藏",
+        宁夏回族自治区: "宁夏",
+        新疆维吾尔自治区: "新疆",
+        香港特别行政区: "香港",
+        澳门特别行政区: "澳门",
+        北京市: "北京",
+        天津市: "天津",
+        上海市: "上海",
+        重庆市: "重庆",
+        河北省: "河北",
+        山西省: "山西",
+        辽宁省: "辽宁",
+        吉林省: "吉林",
+        黑龙江省: "黑龙江",
+        江苏省: "江苏",
+        浙江省: "浙江",
+        安徽省: "安徽",
+        福建省: "福建",
+        江西省: "江西",
+        山东省: "山东",
+        河南省: "河南",
+        湖北省: "湖北",
+        湖南省: "湖南",
+        广东省: "广东",
+        海南省: "海南",
+        四川省: "四川",
+        贵州省: "贵州",
+        云南省: "云南",
+        陕西省: "陕西",
+        甘肃省: "甘肃",
+        青海省: "青海",
+        台湾省: "台湾",
+        阿坝藏族羌族自治州: "阿坝",
+        甘孜藏族自治州: "甘孜",
+        凉山彝族自治州: "凉山",
+        成都市: "成都",
+        自贡市: "自贡",
+        攀枝花市: "攀枝花",
+        泸州市: "泸州",
+        德阳市: "德阳",
+        绵阳市: "绵阳",
+        广元市: "广元",
+        遂宁市: "遂宁",
+        内江市: "内江",
+        乐山市: "乐山",
+        南充市: "南充",
+        眉山市: "眉山",
+        宜宾市: "宜宾",
+        广安市: "广安",
+        达州市: "达州",
+        雅安市: "雅安",
+        巴中市: "巴中",
+        资阳市: "资阳",
+      };
+
+      const state = {
+        scope: "china",
+        mode: "locate",
+        region: "all",
+        question: "",
+        score: 0,
+        streak: 0,
+        answered: 0,
+        correct: 0,
+        round: 1,
+        hintLevel: 0,
+        wrong: new Set(),
+        learned: new Set(),
+        features: [],
+        scale: 1,
+      };
+
+      const els = {
+        map: document.querySelector("#map"),
+        loading: document.querySelector("#loading"),
+        subtitle: document.querySelector("#subtitle"),
+        capitalTab: document.querySelector("#capitalTab"),
+        score: document.querySelector("#score"),
+        streak: document.querySelector("#streak"),
+        progress: document.querySelector("#progress"),
+        accuracy: document.querySelector("#accuracy"),
+        questionLabel: document.querySelector("#questionLabel"),
+        question: document.querySelector("#question"),
+        questionHelp: document.querySelector("#questionHelp"),
+        answer: document.querySelector("#answer"),
+        submit: document.querySelector("#submit"),
+        next: document.querySelector("#next"),
+        hint: document.querySelector("#hint"),
+        result: document.querySelector("#result"),
+        title: document.querySelector("#provinceTitle"),
+        intro: document.querySelector("#provinceIntro"),
+        facts: document.querySelector("#facts"),
+        wrongList: document.querySelector("#wrongList"),
+        regionFilter: document.querySelector("#regionFilter"),
+      };
+
+      function normalizeName(name) {
+        return aliases[name] || String(name || "")
+          .replace(/省|市|壮族自治区|回族自治区|维吾尔自治区|自治区|特别行政区/g, "");
+      }
+
+      function currentInfoMap() {
+        return state.scope === "sichuan" ? sichuanInfo : provinceInfo;
+      }
+
+      function currentTotal() {
+        return Object.keys(currentInfoMap()).length;
+      }
+
+      function infoOf(name) {
+        const key = normalizeName(name);
+        const info = currentInfoMap()[key] || ["未知", "未知", "未知", "未知", "暂无资料", "未知"];
+        return { name: key, capital: info[0], region: info[1], scenic: info[2], food: info[3], intro: info[4], cities: info[5] };
+      }
+
+      function availableNames() {
+        return Object.keys(currentInfoMap()).filter((name) => state.region === "all" || infoOf(name).region === state.region);
+      }
+
+      function pickQuestion() {
+        const names = availableNames();
+        state.question = names[Math.floor(Math.random() * names.length)] || "甘肃";
+        state.hintLevel = 0;
+        updateQuestion();
+        clearMarks();
+        els.answer.value = "";
+        els.answer.focus();
+      }
+
+      function updateQuestion() {
+        const info = infoOf(state.question);
+        if (state.mode === "locate") {
+          els.questionLabel.textContent = state.scope === "sichuan" ? "请在四川地图上点出" : "请在地图上点出";
+          els.question.textContent = state.question;
+          els.questionHelp.textContent = state.scope === "sichuan" ? "点击四川地市州节点作答，也可以输入名称。" : "点击地图作答，也可以在输入框里输入省份名称。";
+        } else if (state.mode === "capital") {
+          els.questionLabel.textContent = state.scope === "sichuan" ? "猜市州驻地" : "猜省会";
+          els.question.textContent = `${state.question} 的${state.scope === "sichuan" ? "州府/驻地" : "省会/首府"}是？`;
+          els.questionHelp.textContent = state.scope === "sichuan" ? "可以输入驻地，也可以点击对应市州查看知识卡。" : "可以输入省会，也可以点击对应省份查看知识卡。";
+        } else if (state.mode === "feature") {
+          els.questionLabel.textContent = state.scope === "sichuan" ? "根据线索猜市州" : "根据线索猜省份";
+          els.question.textContent = info.intro;
+          els.questionHelp.textContent = state.scope === "sichuan" ? "输入地市州名称，或点击四川地图作答。" : "输入省份名称，或点击地图作答。";
+        } else {
+          els.questionLabel.textContent = "自由学习";
+          els.question.textContent = state.scope === "sichuan" ? "点击任意地市州" : "点击任意省份";
+          els.questionHelp.textContent = "不计分，点哪里就学习哪里。";
+        }
+        updateStats();
+      }
+
+      function updateStats() {
+        els.score.textContent = state.score;
+        els.streak.textContent = state.streak;
+        els.progress.textContent = `${Math.min(state.round, currentTotal())}/${currentTotal()}`;
+        els.accuracy.textContent = state.answered ? `${Math.round(state.correct / state.answered * 100)}%` : "0%";
+      }
+
+      function showProvince(name) {
+        const info = infoOf(name);
+        state.learned.add(info.name);
+        els.title.textContent = info.name;
+        els.intro.textContent = info.intro;
+        els.facts.innerHTML = [
+          [state.scope === "sichuan" ? "驻地" : "省会", info.capital],
+          ["地区", info.region],
+          ["景区", info.scenic],
+          ["美食", info.food],
+          [state.scope === "sichuan" ? "区县" : "城市", info.cities],
+        ].map(([label, value]) => `<div class="fact"><b>${label}</b><span>${value}</span></div>`).join("");
+        document.querySelectorAll(".province").forEach((node) => {
+          node.classList.toggle("learned", state.learned.has(node.dataset.name));
+          node.classList.toggle("focused", node.dataset.name === info.name);
+        });
+      }
+
+      function markProvince(name, className) {
+        document.querySelectorAll(".province").forEach((node) => {
+          if (node.dataset.name === name) node.classList.add(className);
+        });
+      }
+
+      function clearMarks() {
+        document.querySelectorAll(".province").forEach((node) => {
+          node.classList.remove("correct", "wrong", "focused");
+        });
+      }
+
+      function answerWith(value) {
+        const guess = normalizeName(value.trim());
+        if (!guess) return;
+
+        if (state.mode === "free") {
+          showProvince(guess);
+          setResult(`正在学习 ${guess}。`, "good");
+          return;
+        }
+
+        const target = infoOf(state.question);
+        const isCorrect = state.mode === "capital"
+          ? guess === target.capital || normalizeName(guess) === target.name
+          : guess === target.name;
+        showProvince(isCorrect ? target.name : guess);
+
+        state.answered += 1;
+        if (isCorrect) {
+          state.correct += 1;
+          state.score += 10 + Math.min(state.streak, 5);
+          state.streak += 1;
+          markProvince(target.name, "correct");
+          setResult(`答对了！${target.name}：${target.intro}`, "good");
+        } else {
+          state.streak = 0;
+          state.wrong.add(target.name);
+          markProvince(guess, "wrong");
+          markProvince(target.name, "correct");
+          setResult(`差一点。正确答案是 ${state.mode === "capital" ? target.capital : target.name}。`, "bad");
+        }
+        state.round += 1;
+        renderWrongList();
+        updateStats();
+      }
+
+      function setResult(text, type = "") {
+        els.result.textContent = text;
+        els.result.className = `result ${type}`;
+      }
+
+      function smartHint() {
+        if (state.mode === "free") {
+          setResult("自由学习模式下，直接点击地图上的省份就可以看知识卡。");
+          return;
+        }
+        const info = infoOf(state.question);
+        state.hintLevel += 1;
+        const hints = state.mode === "capital"
+          ? [`它位于${info.region}。`, `${state.scope === "sichuan" ? "驻地" : "省会"}第一个字是“${info.capital[0]}”。`, `答案是：${info.capital}。`]
+          : [`它属于${info.region}。`, `代表景区：${info.scenic}。`, `${state.scope === "sichuan" ? "地市州" : "省份"}第一个字是“${info.name[0]}”。`, `答案是：${info.name}。`];
+        setResult(hints[Math.min(state.hintLevel - 1, hints.length - 1)]);
+      }
+
+      function renderWrongList() {
+        if (!state.wrong.size) {
+          els.wrongList.innerHTML = "<span class='sub'>还没有错题。</span>";
+          return;
+        }
+        els.wrongList.innerHTML = [...state.wrong].map((name) => `<button class="chip" data-review="${name}">${name}</button>`).join("");
+      }
+
+      function pathsFromGeometry(geometry, project) {
+        const polys = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+        return polys.map((poly) => poly.map((ring) => ring.map(([lng, lat], index) => {
+          const [x, y] = project(lng, lat);
+          return `${index ? "L" : "M"}${x.toFixed(2)} ${y.toFixed(2)}`;
+        }).join(" ") + " Z").join(" ")).join(" ");
+      }
+
+      function boundsOf(features) {
+        const box = { minLng: Infinity, maxLng: -Infinity, minLat: Infinity, maxLat: -Infinity };
+        const visit = (coords) => {
+          if (typeof coords[0] === "number") {
+            box.minLng = Math.min(box.minLng, coords[0]);
+            box.maxLng = Math.max(box.maxLng, coords[0]);
+            box.minLat = Math.min(box.minLat, coords[1]);
+            box.maxLat = Math.max(box.maxLat, coords[1]);
+          } else {
+            coords.forEach(visit);
+          }
+        };
+        features.forEach((feature) => visit(feature.geometry.coordinates));
+        return box;
+      }
+
+      function renderMap(features) {
+        state.features = features;
+        const box = boundsOf(features);
+        const width = 1000;
+        const height = 760;
+        const pad = 50;
+        const scale = Math.min((width - pad * 2) / (box.maxLng - box.minLng), (height - pad * 2) / (box.maxLat - box.minLat));
+        const project = (lng, lat) => [
+          (lng - box.minLng) * scale + pad,
+          height - ((lat - box.minLat) * scale + pad),
+        ];
+        els.map.innerHTML = `<g id="mapLayer">${features.map((feature) => {
+          const name = infoOf(feature.properties.name || feature.properties.fullname || feature.properties.NAME).name;
+          return `<path class="province" data-name="${name}" d="${pathsFromGeometry(feature.geometry, project)}"><title>${name}</title></path>`;
+        }).join("")}</g>`;
+        els.loading.hidden = true;
+      }
+
+      function renderSichuanMap() {
+        els.map.innerHTML = `
+          <g id="mapLayer">
+            <path class="sichuan-backdrop" d="M120 382 C150 214 252 96 396 112 C492 16 670 66 735 164 C876 194 919 372 796 484 C806 632 664 725 520 680 C430 755 285 704 304 594 C178 564 94 494 120 382 Z"></path>
+            ${sichuanNodes.map(([name, x, y]) => `
+              <g class="province city-node" data-name="${name}">
+                <circle cx="${x}" cy="${y}" r="${name.length > 2 ? 46 : 40}"></circle>
+                <text x="${x}" y="${y}">${name}</text>
+                <title>${name}</title>
+              </g>
+            `).join("")}
+          </g>`;
+        els.loading.hidden = true;
+      }
+
+      function updateRegionOptions() {
+        const regions = state.scope === "sichuan"
+          ? ["成都平原", "川北", "川中", "川南", "川东北", "川西", "川西北", "攀西"]
+          : ["华北", "东北", "华东", "华中", "华南", "西南", "西北", "港澳台"];
+        els.regionFilter.innerHTML = `<option value="all">全部地区</option>${regions.map((region) => `<option value="${region}">${region}</option>`).join("")}`;
+        state.region = "all";
+      }
+
+      function resetGame() {
+        state.score = 0;
+        state.streak = 0;
+        state.answered = 0;
+        state.correct = 0;
+        state.round = 1;
+        state.hintLevel = 0;
+        state.wrong = new Set();
+        state.learned = new Set();
+        renderWrongList();
+      }
+
+      function setScope(scope) {
+        state.scope = scope;
+        resetGame();
+        updateRegionOptions();
+        document.querySelectorAll(".scope-btn").forEach((node) => node.classList.toggle("active", node.dataset.scope === scope));
+        els.subtitle.textContent = scope === "sichuan"
+          ? "四川地市州地理小游戏：学位置、猜驻地、看景区美食和区域特点。"
+          : "更适合电脑大屏的中国地理小游戏：点地图、猜省会、猜特色、自由学习。";
+        els.capitalTab.textContent = scope === "sichuan" ? "猜驻地" : "猜省会";
+        els.title.textContent = scope === "sichuan" ? "点击任意地市州" : "点击任意省份";
+        els.intro.textContent = scope === "sichuan" ? "查看驻地、区域、景区、美食和代表区县。" : "查看省会、位置、景区、美食、名人和代表城市。";
+        els.facts.innerHTML = "";
+        setResult(scope === "sichuan" ? "已切换到四川地市州闯关。按 N 下一题，按 H 要提示。" : "已切换到全国省份闯关。");
+        if (scope === "sichuan") {
+          renderSichuanMap();
+        } else if (state.features.length) {
+          renderMap(state.features);
+        }
+        pickQuestion();
+      }
+
+      function setScale(nextScale) {
+        state.scale = Math.max(0.8, Math.min(2.2, nextScale));
+        const layer = document.querySelector("#mapLayer");
+        if (layer) {
+          const offset = (1 - state.scale) * 500;
+          layer.setAttribute("transform", `translate(${offset} ${offset * 0.76}) scale(${state.scale})`);
+        }
+      }
+
+      async function boot() {
+        try {
+          const response = await fetch(GEOJSON_URL);
+          const geojson = await response.json();
+          renderMap(geojson.features || []);
+        } catch (error) {
+          els.loading.textContent = "地图数据读取失败。请检查网络，或从 GitHub 仓库下载 china-provinces.geojson 放到本文件旁边。";
+        }
+        renderWrongList();
+        updateRegionOptions();
+        pickQuestion();
+      }
+
+      document.addEventListener("click", (event) => {
+        const province = event.target.closest(".province");
+        if (province) answerWith(province.dataset.name);
+        const tab = event.target.closest(".tab");
+        if (tab) {
+          state.mode = tab.dataset.mode;
+          document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node === tab));
+          pickQuestion();
+          setResult(state.mode === "free" ? `自由学习模式：点击任意${state.scope === "sichuan" ? "地市州" : "省份"}查看知识卡。` : "已切换模式，开始新题。");
+        }
+        const scopeButton = event.target.closest(".scope-btn");
+        if (scopeButton) {
+          setScope(scopeButton.dataset.scope);
+        }
+        const review = event.target.closest("[data-review]");
+        if (review) showProvince(review.dataset.review);
+      });
+
+      els.submit.addEventListener("click", () => answerWith(els.answer.value));
+      els.next.addEventListener("click", pickQuestion);
+      els.hint.addEventListener("click", smartHint);
+      els.regionFilter.addEventListener("change", () => {
+        state.region = els.regionFilter.value;
+        pickQuestion();
+      });
+      document.querySelector("#zoomIn").addEventListener("click", () => setScale(state.scale + 0.18));
+      document.querySelector("#zoomOut").addEventListener("click", () => setScale(state.scale - 0.18));
+      document.querySelector("#resetView").addEventListener("click", () => setScale(1));
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") answerWith(els.answer.value);
+        if (event.key.toLowerCase() === "n") pickQuestion();
+        if (event.key.toLowerCase() === "h") smartHint();
+        if (event.key === "Escape") els.answer.value = "";
+        if (event.key === "+" || event.key === "=") setScale(state.scale + 0.18);
+        if (event.key === "-") setScale(state.scale - 0.18);
+      });
+
+      boot();
+    </script>
+  </body>
 </html>
