@@ -236,18 +236,6 @@
         fill: #d9efe5;
       }
 
-      .map-label {
-        fill: var(--ink);
-        font-size: 16px;
-        font-weight: 800;
-        pointer-events: none;
-        text-anchor: middle;
-        dominant-baseline: middle;
-        paint-order: stroke;
-        stroke: rgba(255, 255, 255, 0.86);
-        stroke-width: 4px;
-      }
-
       .zoom {
         position: absolute;
         right: 16px;
@@ -707,6 +695,7 @@
         chinaFeatures: [],
         sichuanFeatures: [],
         scale: 1,
+        autoNextTimer: null,
       };
 
       const els = {
@@ -759,6 +748,7 @@
       }
 
       function pickQuestion() {
+        clearAutoNext();
         const names = availableNames();
         state.question = names[Math.floor(Math.random() * names.length)] || "甘肃";
         state.hintLevel = 0;
@@ -773,7 +763,7 @@
         if (state.mode === "locate") {
           els.questionLabel.textContent = state.scope === "sichuan" ? "请在四川地图上点出" : "请在地图上点出";
           els.question.textContent = state.question;
-          els.questionHelp.textContent = state.scope === "sichuan" ? "点击四川地市州节点作答，也可以输入名称。" : "点击地图作答，也可以在输入框里输入省份名称。";
+          els.questionHelp.textContent = state.scope === "sichuan" ? "点击四川地市州区域作答，也可以输入名称。" : "点击地图作答，也可以在输入框里输入省份名称。";
         } else if (state.mode === "capital") {
           els.questionLabel.textContent = state.scope === "sichuan" ? "猜市州驻地" : "猜省会";
           els.question.textContent = `${state.question} 的${state.scope === "sichuan" ? "州府/驻地" : "省会/首府"}是？`;
@@ -830,6 +820,7 @@
       function answerWith(value) {
         const guess = normalizeName(value.trim());
         if (!guess) return;
+        if (state.autoNextTimer && state.mode !== "free") return;
 
         if (state.mode === "free") {
           showProvince(guess);
@@ -860,11 +851,28 @@
         state.round += 1;
         renderWrongList();
         updateStats();
+        scheduleAutoNext();
       }
 
       function setResult(text, type = "") {
         els.result.textContent = text;
         els.result.className = `result ${type}`;
+      }
+
+      function clearAutoNext() {
+        if (state.autoNextTimer) {
+          clearTimeout(state.autoNextTimer);
+          state.autoNextTimer = null;
+        }
+      }
+
+      function scheduleAutoNext() {
+        clearAutoNext();
+        setResult(`${els.result.textContent} 3 秒后自动下一题。`, els.result.className.replace("result", "").trim());
+        state.autoNextTimer = setTimeout(() => {
+          state.autoNextTimer = null;
+          pickQuestion();
+        }, 3000);
       }
 
       function smartHint() {
@@ -932,16 +940,7 @@
           const name = featureDisplayName(feature);
           return `<path class="province" data-name="${name}" d="${pathsFromGeometry(feature.geometry, project)}"><title>${name}</title></path>`;
         }).join("");
-        const labels = cacheKey === "sichuanFeatures"
-          ? features.map((feature) => {
-              const name = featureDisplayName(feature);
-              const center = feature.properties.centroid || feature.properties.center;
-              if (!center) return "";
-              const [x, y] = project(center[0], center[1]);
-              return `<text class="map-label" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${name}</text>`;
-            }).join("")
-          : "";
-        els.map.innerHTML = `<g id="mapLayer">${paths}${labels}</g>`;
+        els.map.innerHTML = `<g id="mapLayer">${paths}</g>`;
         els.loading.hidden = true;
       }
 
