@@ -236,48 +236,16 @@
         fill: #d9efe5;
       }
 
-      .city-node {
-        cursor: pointer;
-      }
-
-      .city-node circle {
-        fill: #e5f2ea;
-        stroke: #8fb5a8;
-        stroke-width: 2;
-        transition: fill 140ms ease, transform 140ms ease, filter 140ms ease;
-      }
-
-      .city-node text {
+      .map-label {
         fill: var(--ink);
-        font-size: 21px;
+        font-size: 16px;
         font-weight: 800;
         pointer-events: none;
         text-anchor: middle;
         dominant-baseline: middle;
-      }
-
-      .city-node:hover circle,
-      .city-node.focused circle {
-        fill: #bfe7d3;
-        filter: drop-shadow(0 10px 12px rgba(12, 70, 50, 0.18));
-      }
-
-      .city-node.correct circle {
-        fill: #47c98f;
-      }
-
-      .city-node.wrong circle {
-        fill: #ef8a7d;
-      }
-
-      .city-node.learned circle {
-        fill: #d9efe5;
-      }
-
-      .sichuan-backdrop {
-        fill: rgba(18, 131, 95, 0.06);
-        stroke: rgba(18, 131, 95, 0.18);
-        stroke-width: 2;
+        paint-order: stroke;
+        stroke: rgba(255, 255, 255, 0.86);
+        stroke-width: 4px;
       }
 
       .zoom {
@@ -578,7 +546,8 @@
     </main>
 
     <script>
-      const GEOJSON_URL = "https://lishuangcheng1.github.io/-/china-provinces.geojson";
+      const CHINA_GEOJSON_URL = "https://lishuangcheng1.github.io/-/china-provinces.geojson";
+      const SICHUAN_GEOJSON_URL = "https://lishuangcheng1.github.io/-/sichuan-prefectures.geojson";
       const provinceInfo = {
         北京: ["北京", "华北", "故宫、长城", "烤鸭、炸酱面", "中国首都，政治文化中心", "北京市"],
         天津: ["天津", "华北", "天津之眼、五大道", "狗不理包子、煎饼馃子", "海河之城，近代建筑丰富", "天津市"],
@@ -640,15 +609,6 @@
         凉山: ["西昌", "攀西", "邛海、螺髻山、泸沽湖", "坨坨肉、火盆烧烤", "攀西地区重要州府，彝族文化和阳光资源突出", "西昌、会理、冕宁"],
       };
 
-      const sichuanNodes = [
-        ["成都", 470, 340], ["德阳", 500, 270], ["绵阳", 560, 215], ["广元", 625, 120],
-        ["巴中", 710, 190], ["达州", 805, 250], ["广安", 770, 345], ["南充", 665, 310],
-        ["遂宁", 600, 365], ["资阳", 560, 450], ["眉山", 455, 455], ["雅安", 345, 445],
-        ["乐山", 430, 550], ["自贡", 560, 560], ["内江", 630, 515], ["泸州", 695, 610],
-        ["宜宾", 585, 650], ["攀枝花", 300, 665], ["凉山", 360, 600], ["阿坝", 335, 210],
-        ["甘孜", 210, 430],
-      ];
-
       const aliases = {
         内蒙古自治区: "内蒙古",
         广西壮族自治区: "广西",
@@ -707,6 +667,30 @@
         资阳市: "资阳",
       };
 
+      const sichuanAdcodeNames = {
+        510100: "成都",
+        510300: "自贡",
+        510400: "攀枝花",
+        510500: "泸州",
+        510600: "德阳",
+        510700: "绵阳",
+        510800: "广元",
+        510900: "遂宁",
+        511000: "内江",
+        511100: "乐山",
+        511300: "南充",
+        511400: "眉山",
+        511500: "宜宾",
+        511600: "广安",
+        511700: "达州",
+        511800: "雅安",
+        511900: "巴中",
+        512000: "资阳",
+        513200: "阿坝",
+        513300: "甘孜",
+        513400: "凉山",
+      };
+
       const state = {
         scope: "china",
         mode: "locate",
@@ -720,7 +704,8 @@
         hintLevel: 0,
         wrong: new Set(),
         learned: new Set(),
-        features: [],
+        chinaFeatures: [],
+        sichuanFeatures: [],
         scale: 1,
       };
 
@@ -752,7 +737,7 @@
 
       function normalizeName(name) {
         return aliases[name] || String(name || "")
-          .replace(/省|市|壮族自治区|回族自治区|维吾尔自治区|自治区|特别行政区/g, "");
+          .replace(/藏族羌族自治州|藏族自治州|彝族自治州|壮族自治区|回族自治区|维吾尔自治区|特别行政区|自治区|自治州|省|市/g, "");
       }
 
       function currentInfoMap() {
@@ -927,8 +912,13 @@
         return box;
       }
 
-      function renderMap(features) {
-        state.features = features;
+      function featureDisplayName(feature) {
+        const adcode = Number(feature.properties.adcode);
+        return sichuanAdcodeNames[adcode] || normalizeName(feature.properties.name || feature.properties.fullname || feature.properties.NAME);
+      }
+
+      function renderMap(features, cacheKey = "chinaFeatures") {
+        state[cacheKey] = features;
         const box = boundsOf(features);
         const width = 1000;
         const height = 760;
@@ -938,26 +928,37 @@
           (lng - box.minLng) * scale + pad,
           height - ((lat - box.minLat) * scale + pad),
         ];
-        els.map.innerHTML = `<g id="mapLayer">${features.map((feature) => {
-          const name = infoOf(feature.properties.name || feature.properties.fullname || feature.properties.NAME).name;
+        const paths = features.map((feature) => {
+          const name = featureDisplayName(feature);
           return `<path class="province" data-name="${name}" d="${pathsFromGeometry(feature.geometry, project)}"><title>${name}</title></path>`;
-        }).join("")}</g>`;
+        }).join("");
+        const labels = cacheKey === "sichuanFeatures"
+          ? features.map((feature) => {
+              const name = featureDisplayName(feature);
+              const center = feature.properties.centroid || feature.properties.center;
+              if (!center) return "";
+              const [x, y] = project(center[0], center[1]);
+              return `<text class="map-label" x="${x.toFixed(1)}" y="${y.toFixed(1)}">${name}</text>`;
+            }).join("")
+          : "";
+        els.map.innerHTML = `<g id="mapLayer">${paths}${labels}</g>`;
         els.loading.hidden = true;
       }
 
-      function renderSichuanMap() {
-        els.map.innerHTML = `
-          <g id="mapLayer">
-            <path class="sichuan-backdrop" d="M120 382 C150 214 252 96 396 112 C492 16 670 66 735 164 C876 194 919 372 796 484 C806 632 664 725 520 680 C430 755 285 704 304 594 C178 564 94 494 120 382 Z"></path>
-            ${sichuanNodes.map(([name, x, y]) => `
-              <g class="province city-node" data-name="${name}">
-                <circle cx="${x}" cy="${y}" r="${name.length > 2 ? 46 : 40}"></circle>
-                <text x="${x}" y="${y}">${name}</text>
-                <title>${name}</title>
-              </g>
-            `).join("")}
-          </g>`;
-        els.loading.hidden = true;
+      async function loadSichuanMap() {
+        if (state.sichuanFeatures.length) {
+          renderMap(state.sichuanFeatures, "sichuanFeatures");
+          return;
+        }
+        els.loading.hidden = false;
+        els.loading.textContent = "正在读取四川地市州地图数据...";
+        try {
+          const response = await fetch(SICHUAN_GEOJSON_URL);
+          const geojson = await response.json();
+          renderMap(geojson.features || [], "sichuanFeatures");
+        } catch (error) {
+          els.loading.textContent = "四川地图数据读取失败。请确认仓库中有 sichuan-prefectures.geojson。";
+        }
       }
 
       function updateRegionOptions() {
@@ -997,9 +998,9 @@
         els.facts.innerHTML = "";
         setResult(scope === "sichuan" ? "已切换到四川地市州闯关。按 N 下一题，按 H 要提示。" : "已切换到全国省份闯关。");
         if (scope === "sichuan") {
-          renderSichuanMap();
-        } else if (state.features.length) {
-          renderMap(state.features);
+          loadSichuanMap();
+        } else if (state.chinaFeatures.length) {
+          renderMap(state.chinaFeatures, "chinaFeatures");
         }
         pickQuestion();
       }
@@ -1015,9 +1016,9 @@
 
       async function boot() {
         try {
-          const response = await fetch(GEOJSON_URL);
+          const response = await fetch(CHINA_GEOJSON_URL);
           const geojson = await response.json();
-          renderMap(geojson.features || []);
+          renderMap(geojson.features || [], "chinaFeatures");
         } catch (error) {
           els.loading.textContent = "地图数据读取失败。请检查网络，或从 GitHub 仓库下载 china-provinces.geojson 放到本文件旁边。";
         }
